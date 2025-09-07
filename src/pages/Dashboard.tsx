@@ -18,6 +18,7 @@ import { queryLoading } from "@/helpers/queryLoading";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type DialogTypes = {
   open: boolean;
@@ -50,6 +51,9 @@ export default function Dashboard() {
       onSuccess: (data: any) => {
         setProducts((prev) => [...prev, { ...data?.data }]);
         setDialog((d) => ({ ...d, open: false }));
+        toast.success("Product Added", {
+          description: `Product was added successfully!`,
+        });
       },
     });
   };
@@ -63,6 +67,9 @@ export default function Dashboard() {
             prev.map((p) => (p.id === values?.id ? { ...p, ...values } : p)),
           );
           setDialog((d) => ({ ...d, open: false }));
+          toast.success("Product Updated", {
+            description: `Product was updated successfully!`,
+          });
         },
       },
     );
@@ -74,6 +81,9 @@ export default function Dashboard() {
       onSuccess: () => {
         setProducts((prev) => prev.filter((p) => p.id !== deleteId));
         setDeleteId(null);
+        toast.success("Product Deleted", {
+          description: `Product was deleted successfully!`,
+        });
       },
     });
   };
