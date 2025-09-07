@@ -14,8 +14,8 @@ const ProductSkeleton = () => {
           <Skeleton className="h-5 w-3/4" />
         </div>
         <div className="flex gap-3 mt-5">
-          <Skeleton className="h-12 w-full" />{" "}
-          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-9 w-full" />{" "}
+          <Skeleton className="h-9 w-full" />
         </div>
       </div>
     </div>

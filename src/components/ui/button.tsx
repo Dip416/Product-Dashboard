@@ -75,6 +75,7 @@ const buttonVariants = cva(
 
 function Button({
   className,
+  childrenClassName,
   variant,
   children,
   size,
@@ -87,6 +88,7 @@ function Button({
     asChild?: boolean;
     loading?: boolean;
     icon?: React.ReactNode;
+    childrenClassName?: string;
   }) {
   const Comp = asChild ? Slot : "button";
   return (
@@ -97,7 +99,7 @@ function Button({
       {...props}
     >
       {loading ? <Loader className="animate-spin" /> : icon}
-      {children && <span>{children}</span>}
+      {children && <span className={childrenClassName}>{children}</span>}
     </Comp>
   );
   return (

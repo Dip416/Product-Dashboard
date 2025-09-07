@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import type { Product } from "@/types/productType";
 import { useProducts } from "@/hooks/useProducts";
-import { Plus, Search, Package, AlertTriangle } from "lucide-react";
+import { Plus, Search, Package } from "lucide-react";
 import ProductCard from "@/components/product/ProductCard";
 import ProductForm from "@/components/product/ProductForm";
 import {
@@ -17,8 +17,10 @@ import ProductSkeleton from "@/components/product/ProductSkeleton";
 import { queryLoading } from "@/helpers/queryLoading";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import ErrorState from "@/components/product/ErrorState";
+import EmptyState from "@/components/product/EmptyState";
+import { useQueryClient } from "@tanstack/react-query";
 
 type DialogTypes = {
   open: boolean;
@@ -38,7 +40,6 @@ export default function Dashboard() {
     addMutation,
     updateMutation,
     deleteMutation,
-    setProducts,
   } = useProducts();
   const [dialog, setDialog] = React.useState<DialogTypes>(dialogInitialValue);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -49,7 +50,10 @@ export default function Dashboard() {
   const handleAdd = (values: any) => {
     addMutation.mutate(values, {
       onSuccess: (data: any) => {
-        setProducts((prev) => [...prev, { ...data?.data }]);
+        queryClient.setQueryData(["products"], (old: Product[] = []) => [
+          ...old,
+          data.data,
+        ]);
         setDialog((d) => ({ ...d, open: false }));
         toast.success("Product Added", {
           description: `Product was added successfully!`,
@@ -63,8 +67,8 @@ export default function Dashboard() {
       { id: values?.id, product: values },
       {
         onSuccess: () => {
-          setProducts((prev) =>
-            prev.map((p) => (p.id === values?.id ? { ...p, ...values } : p)),
+          queryClient.setQueryData(["products"], (old: Product[] = []) =>
+            old.map((p) => (p.id === values.id ? { ...p, ...values } : p)),
           );
           setDialog((d) => ({ ...d, open: false }));
           toast.success("Product Updated", {
@@ -79,7 +83,9 @@ export default function Dashboard() {
     if (!deleteId) return;
     deleteMutation.mutate(deleteId, {
       onSuccess: () => {
-        setProducts((prev) => prev.filter((p) => p.id !== deleteId));
+        queryClient.setQueryData(["products"], (old: Product[] = []) =>
+          old.filter((p) => p.id !== deleteId),
+        );
         setDeleteId(null);
         toast.success("Product Deleted", {
           description: `Product was deleted successfully!`,
@@ -103,13 +109,13 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
               <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl">
-                <Package className="h-8 w-8 text-white" />
+                <Package className="sm:size-8 size-6 text-white" />
               </div>
               <div className="ml-4">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                <h1 className="text-lg sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                   Product Dashboard
                 </h1>
-                <p className="text-gray-500 text-sm">
+                <p className="text-gray-500 text-xs sm:text-sm">
                   Manage your inventory with ease
                 </p>
               </div>
@@ -117,6 +123,7 @@ export default function Dashboard() {
             <Button
               variant="gradient"
               icon={<Plus className="h-4 w-4" />}
+              childrenClassName="max-sm:hidden"
               onClick={() => {
                 setDialog({ open: true, mode: "add" });
               }}
@@ -150,41 +157,9 @@ export default function Dashboard() {
           {queryLoading(productsQuery) ? (
             <ProductSkeleton />
           ) : productsQuery.isError ? (
-            <div className="text-center col-span-full py-16">
-              <div className="p-4 bg-gradient-to-r from-red-100 to-pink-100 rounded-full w-24 h-24 mx-auto mb-4">
-                <AlertTriangle className="mx-auto h-16 w-16 text-red-600" />
-              </div>
-              <h3 className="mt-4 text-xl font-bold text-gray-900">
-                Oops! Something went wrong
-              </h3>
-              <p className="mt-2 text-gray-600">
-                We couldn’t load the products. Please check your connection and
-                try again.
-              </p>
-
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  queryClient.invalidateQueries({ queryKey: ["products"] });
-                }}
-                className="mt-6 px-6"
-              >
-                Retry
-              </Button>
-            </div>
-          ) : filteredProducts?.length === 0 ? (
-            <div className="text-center col-span-full py-16">
-              <div className="p-4 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full w-24 h-24 mx-auto mb-4">
-                <Package className="mx-auto h-16 w-16 text-blue-600" />
-              </div>
-              <h3 className="mt-4 text-xl font-bold text-gray-900">
-                No products found
-              </h3>
-              <p className="mt-2 text-gray-600">
-                Try adjusting your search terms or filters to find what you're
-                looking for.
-              </p>
-            </div>
+            <ErrorState />
+          ) : productsQuery?.isSuccess && filteredProducts?.length === 0 ? (
+            <EmptyState />
           ) : (
             filteredProducts?.map((product) => (
               <ProductCard
